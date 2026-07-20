@@ -6,6 +6,13 @@ import { RotateCcw, Trophy } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import cabeceraRosental from "@/public/logo-cabecera-rosental.png"
+import logoClash from "@/public/logo-clash.jpg"
+import logoArboria from "@/public/logo-arboria.jpg"
+import logoRosental from "@/public/logo-rosental.jpg"
+import logoFirmia from "@/public/logo-firmia.jpeg"
+import logoLocativa from "@/public/logo-locativa.jpg"
+import logoDatic from "@/public/logo-datic.jpg"
+import { formatTime } from "@/lib/utils"
 import { NameModal } from "./NameModal"
 
 type Phase = "idle" | "sequence" | "input" | "roundComplete" | "gameover"
@@ -18,15 +25,18 @@ interface ColorDef {
   litFrom: string
   lit: string
   glow: string
+  logo: typeof cabeceraRosental
+  logoBg: string
+  logoPad: number // padding interno del logo, en % — más chico = logo más "zoomeado"
 }
 
 const COLORS: ColorDef[] = [
-  { id: 0, name: "Rojo", baseFrom: "#c04545", baseTo: "#5a1010", litFrom: "#ffb3b3", lit: "#ef4444", glow: "rgba(239,68,68,0.9)" },
-  { id: 1, name: "Verde", baseFrom: "#3c9e63", baseTo: "#0c3a1e", litFrom: "#a7f3d0", lit: "#22c55e", glow: "rgba(34,197,94,0.9)" },
-  { id: 2, name: "Azul", baseFrom: "#4a7fc9", baseTo: "#10294d", litFrom: "#bfdbfe", lit: "#3b82f6", glow: "rgba(59,130,246,0.9)" },
-  { id: 3, name: "Amarillo", baseFrom: "#cfa52e", baseTo: "#4f3f06", litFrom: "#fef08a", lit: "#eab308", glow: "rgba(234,179,8,0.9)" },
-  { id: 4, name: "Violeta", baseFrom: "#9256cf", baseTo: "#2e0e4f", litFrom: "#e9d5ff", lit: "#a855f7", glow: "rgba(168,85,247,0.9)" },
-  { id: 5, name: "Naranja", baseFrom: "#d97a35", baseTo: "#4f2006", litFrom: "#fed7aa", lit: "#f97316", glow: "rgba(249,115,22,0.9)" },
+  { id: 0, name: "Rojo", baseFrom: "#c04545", baseTo: "#5a1010", litFrom: "#ffb3b3", lit: "#ef4444", glow: "rgba(239,68,68,0.9)", logo: logoClash, logoBg: "#ffffff", logoPad: 6 },
+  { id: 1, name: "Verde", baseFrom: "#3c9e63", baseTo: "#0c3a1e", litFrom: "#a7f3d0", lit: "#22c55e", glow: "rgba(34,197,94,0.9)", logo: logoFirmia, logoBg: "#010080", logoPad: 6 },
+  { id: 2, name: "Azul", baseFrom: "#4a7fc9", baseTo: "#10294d", litFrom: "#bfdbfe", lit: "#3b82f6", glow: "rgba(59,130,246,0.9)", logo: logoRosental, logoBg: "#ffffff", logoPad: 0 },
+  { id: 3, name: "Amarillo", baseFrom: "#cfa52e", baseTo: "#4f3f06", litFrom: "#fef08a", lit: "#eab308", glow: "rgba(234,179,8,0.9)", logo: logoArboria, logoBg: "#00413b", logoPad: 0 },
+  { id: 4, name: "Violeta", baseFrom: "#9256cf", baseTo: "#2e0e4f", litFrom: "#e9d5ff", lit: "#a855f7", glow: "rgba(168,85,247,0.9)", logo: logoLocativa, logoBg: "#003a68", logoPad: 0 },
+  { id: 5, name: "Naranja", baseFrom: "#d97a35", baseTo: "#4f2006", litFrom: "#fed7aa", lit: "#f97316", glow: "rgba(249,115,22,0.9)", logo: logoDatic, logoBg: "#1d1d1b", logoPad: 12 },
 ]
 
 // Ángulo central de cada gajo, empezando arriba y en sentido horario
@@ -34,6 +44,7 @@ const ANGLES = COLORS.map((_, i) => -90 + i * 60)
 const WEDGE_SPAN = 30 // cada gajo cubre +/-30° alrededor de su ángulo central (60° en total)
 const OUTER_R = 98
 const INNER_R = 32 // el hub central mide 34% (radio 34 en un viewBox de 200) — se mete 2 unidades debajo para que no quede hueco
+const LOGO_RADIUS_PCT = 33 // radio (en % del contenedor) donde se centra la insignia de cada logo, a mitad de camino entre el hub y el borde
 
 function wedgePath(cx: number, cy: number, innerR: number, outerR: number, startDeg: number, endDeg: number) {
   const toRad = (d: number) => (d * Math.PI) / 180
@@ -59,21 +70,16 @@ function randomColorId() {
   return Math.floor(Math.random() * COLORS.length)
 }
 
+// Velocidades ~42% más rápidas que la base original (700/320/600/800ms: -10%, -20%, -20% acumulado)
 function onDurationForRound(round: number) {
-  return Math.max(280, 700 - (round - 1) * 30)
+  return Math.max(162, 403 - (round - 1) * 18)
 }
 
 function gapDurationForRound(round: number) {
-  return Math.max(150, 320 - (round - 1) * 12)
+  return Math.max(86, 184 - (round - 1) * 7)
 }
 
-function formatTime(totalSeconds: number): string {
-  const mins = Math.floor(totalSeconds / 60)
-  const secs = totalSeconds % 60
-  return `${mins}:${secs.toString().padStart(2, "0")}`
-}
-
-interface GameResult {
+export interface GameResult {
   rounds: number
   keysInRound: number
   time: number
@@ -110,7 +116,7 @@ export default function SimonGame() {
 
     setPlaybackCount(0)
     ;(async () => {
-      await sleep(600)
+      await sleep(346)
       for (let i = 0; i < sequence.length; i++) {
         if (cancelled) return
         setLitIndex(sequence[i])
@@ -194,7 +200,7 @@ export default function SimonGame() {
         setRoundFlash(false)
         setSequence((prev) => [...prev, randomColorId()])
         setPhase("sequence")
-      }, 800)
+      }, 461)
     } else {
       setPlayerIndex(nextIndex)
     }
@@ -370,7 +376,7 @@ export default function SimonGame() {
                     key={color.id}
                     d={d}
                     fill={fill}
-                    stroke="rgba(0,0,0,0.55)"
+                    stroke="#161616"
                     strokeWidth={3}
                     role="button"
                     tabIndex={disabled ? -1 : 0}
@@ -389,16 +395,60 @@ export default function SimonGame() {
               })}
             </svg>
 
-            {/* Hub central */}
+            {/* Insignias con los logos: una tarjetita con el color de fondo propio de cada logo
+                y sombra, centrada en cada gajo, para que el logo (cuadrado) no choque contra
+                el color/forma del gajo */}
+            {COLORS.map((color, i) => {
+              const angleRad = (ANGLES[i] * Math.PI) / 180
+              const top = 50 + LOGO_RADIUS_PCT * Math.sin(angleRad)
+              const left = 50 + LOGO_RADIUS_PCT * Math.cos(angleRad)
+              return (
+                <div
+                  key={color.id}
+                  className="absolute rounded-full pointer-events-none overflow-hidden"
+                  style={{
+                    width: "21%",
+                    height: "21%",
+                    top: `${top}%`,
+                    left: `${left}%`,
+                    transform: "translate(-50%, -50%)",
+                    backgroundColor: color.logoBg,
+                    boxShadow: `0 3px 8px rgba(0,0,0,0.5), 0 0 0 2px ${color.lit}`,
+                  }}
+                >
+                  <Image
+                    src={color.logo}
+                    alt=""
+                    fill
+                    loading="eager"
+                    sizes="120px"
+                    style={{ padding: `${color.logoPad}%` }}
+                    className="object-contain"
+                  />
+                </div>
+              )
+            })}
+
+            {/* Hub central: además de mostrar el estado, funciona como botón de iniciar/reiniciar */}
             <div
-              className={`absolute rounded-full border flex flex-col items-center justify-center text-white font-bold select-none transition-colors duration-300 ${hubClasses}`}
+              role="button"
+              tabIndex={0}
+              aria-label={phase === "idle" ? "Iniciar juego" : "Reiniciar juego"}
+              onClick={startGame}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  startGame()
+                }
+              }}
+              className={`absolute rounded-full border flex flex-col items-center justify-center text-white font-bold select-none cursor-pointer outline-none transition-colors duration-300 hover:brightness-125 active:scale-95 ${hubClasses}`}
               style={{
                 width: "34%",
                 height: "34%",
                 top: "50%",
                 left: "50%",
                 transform: `translate(-50%, -50%) scale(${roundFlash ? 1.08 : 1})`,
-                transitionProperty: "background-color, border-color, transform",
+                transitionProperty: "background-color, border-color, transform, filter",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
               }}
             >
@@ -422,24 +472,13 @@ export default function SimonGame() {
           </div>
         </div>
 
-        {/* Game Over summary */}
-        {phase === "gameover" && result && (
-          <div className="text-center p-6 bg-white rounded-xl shadow-lg border-2 border-red-200">
-            <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">¡Juego terminado!</h2>
-            <p className="text-gray-700 mb-4">
-              Completaste {result.rounds} {result.rounds === 1 ? "vuelta" : "vueltas"}, acertaste{" "}
-              {result.keysInRound} {result.keysInRound === 1 ? "tecla" : "teclas"} en la vuelta {result.rounds + 1}, en{" "}
-              {formatTime(result.time)}.
-            </p>
-            <Button onClick={startGame} className="gap-2">
-              <RotateCcw className="w-4 h-4" />
-              Intentar de nuevo
-            </Button>
-          </div>
-        )}
       </div>
-      <NameModal open={showNameModal} onSubmit={handleSaveName} />
+      <NameModal
+        open={showNameModal}
+        result={result}
+        onSubmit={handleSaveName}
+        onClose={() => setShowNameModal(false)}
+      />
     </div>
   )
 }
